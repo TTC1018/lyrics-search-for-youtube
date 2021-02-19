@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
         if(isMyServiceRunning()){
             //이미 플로팅 위젯 실행중일 때 종료
+            stopService(new Intent(MainActivity.this, FloatingViewService.class));
         }
 
         startBtn.setOnClickListener(new View.OnClickListener() {
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
                 // 다른 앱 위에 그리기 권한 체크
                 if(checkOverlayDisplayPermission()){
                     //플로팅 위젯 시작
-
+                    startService(new Intent(MainActivity.this, FloatingViewService.class));
                     //본 앱은 종료
                     finish();
                 }
@@ -52,12 +53,11 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isMyServiceRunning() {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-
         // 현재 실행중인 어플 중 플로팅 위젯이 실행중인지를 판단
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-//            if (FloatingWindowGFG.class.getName().equals(service.service.getClassName())) {
-//                return true;
-//            }
+            if (FloatingViewService.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
         }
         return false;
     }
@@ -68,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
         builder.setCancelable(true);
         builder.setTitle("다른 앱 위에 표시");
         builder.setMessage("'다른 앱 위에 표시' 권한이 필요합니다.");
-        // The event of the Positive-Button is set
         builder.setPositiveButton("설정", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
