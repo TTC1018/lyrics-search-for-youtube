@@ -48,7 +48,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
         buttonView = mFloatingView.findViewById(R.id.buttonLayout);
         panelView = mFloatingView.findViewById(R.id.panelLayout);
 
-//        floatBtn.setOnClickListener(this);
+        floatBtn.setOnClickListener(this);
         closeBtn.setOnClickListener(this);
         panelView.findViewById(R.id.buttonExpandedLayout).setOnClickListener(this);
         LAYOUT_TYPE = findLayoutType();
@@ -68,7 +68,35 @@ public class FloatingViewService extends Service implements View.OnClickListener
 
         mWindowManager.addView(mFloatingView, floatWindowLayoutParam);
 
-        mFloatingView.setOnTouchListener(new View.OnTouchListener() {
+        mFloatingView.setOnTouchListener(makeTouchListener());
+        floatBtn.setOnTouchListener(makeTouchListener());
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.buttonExpandedLayout:
+                buttonView.setVisibility(View.VISIBLE);
+                panelView.setVisibility(View.GONE);
+                break;
+
+            case R.id.floatButton:
+                buttonView.setVisibility(View.GONE);
+                panelView.setVisibility(View.VISIBLE);
+                break;
+
+            case R.id.closeButton:
+                stopSelf();
+                mWindowManager.removeView(mFloatingView);
+                Intent backToHome = new Intent(FloatingViewService.this, MainActivity.class);
+                backToHome.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(backToHome);
+                break;
+        }
+    }
+
+    private View.OnTouchListener makeTouchListener(){
+        View.OnTouchListener otl = new View.OnTouchListener(){
             final WindowManager.LayoutParams floatWindowLayoutUpdateParam = floatWindowLayoutParam;
             double x;
             double y;
@@ -84,40 +112,19 @@ public class FloatingViewService extends Service implements View.OnClickListener
 
                         px = event.getRawX();
                         py = event.getRawY();
-                        return true;
+                        break;
 
                     case MotionEvent.ACTION_MOVE:
                         floatWindowLayoutUpdateParam.x = (int) ((x + event.getRawX()) - px);
                         floatWindowLayoutUpdateParam.y = (int) ((y + event.getRawY()) - py);
                         mWindowManager.updateViewLayout(mFloatingView, floatWindowLayoutUpdateParam);
-                        return true;
+                        break;
                 }
                 return false;
             }
-        });
-    }
+        };
 
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.buttonExpandedLayout:
-                buttonView.setVisibility(View.VISIBLE);
-                panelView.setVisibility(View.GONE);
-                break;
-
-//            case R.id.floatButton:
-//                buttonView.setVisibility(View.GONE);
-//                panelView.setVisibility(View.VISIBLE);
-//                break;
-
-            case R.id.closeButton:
-                stopSelf();
-                mWindowManager.removeView(mFloatingView);
-                Intent backToHome = new Intent(FloatingViewService.this, MainActivity.class);
-                backToHome.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(backToHome);
-                break;
-        }
+        return otl;
     }
 
     private int findLayoutType(){
