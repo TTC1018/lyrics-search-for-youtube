@@ -3,20 +3,28 @@ package com.example.lyricssearchforyoutube;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.accessibility.AccessibilityManager;
 import android.widget.ImageButton;
+import android.widget.Toast;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    private boolean ACCESSIBILITY_PERMISSION;
     private ImageButton startBtn;
     private AlertDialog dialog;
 
@@ -24,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        checkAccessibilityPermission();
 
         startBtn = findViewById(R.id.startBtn);
 
@@ -98,6 +107,55 @@ public class MainActivity extends AppCompatActivity {
             }
         } else {
             return true;
+        }
+    }
+
+    private boolean isAccessibilityServiceEnabled(Context context, Class<? extends AccessibilityService> service) {
+        AccessibilityManager am = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+        List<AccessibilityServiceInfo> enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+
+        for (AccessibilityServiceInfo enabledService : enabledServices) {
+            ServiceInfo enabledServiceInfo = enabledService.getResolveInfo().serviceInfo;
+            if (enabledServiceInfo.packageName.equals(context.getPackageName()) && enabledServiceInfo.name.equals(service.getName()))
+                return true;
+        }
+        return false;
+    }
+
+    private void requestAccessibilityPermission() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog dialog;
+
+        builder.setCancelable(true);
+        builder.setTitle("접근성 권한 필요");
+        builder.setMessage("어플의 기능을 위해 '접근성 권한'을 허용해주세요.");
+        builder.setPositiveButton("설정", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // 설정으로 이동
+                Intent intent = new Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                startActivityForResult(intent, 0);
+            }
+        });
+        dialog = builder.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface arg0) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+            }
+        });
+        dialog.show();
+    }
+
+    private boolean checkAccessibilityPermission(){
+        ACCESSIBILITY_PERMISSION = isAccessibilityServiceEnabled(getApplicationContext(), MyAccessibilityService.class);
+        if(ACCESSIBILITY_PERMISSION){
+            Toast.makeText(getApplicationContext(), "접근성 권한 허가됨", Toast.LENGTH_SHORT).show();
+            return true;
+        }else{
+            Toast.makeText(getApplicationContext(), "접근성 권한 허용 필요", Toast.LENGTH_LONG).show();
+            requestAccessibilityPermission();
+            return false;
         }
     }
 }
