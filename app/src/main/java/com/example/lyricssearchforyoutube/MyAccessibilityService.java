@@ -9,6 +9,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import com.example.lyricssearchforyoutube.StrData.StrData;
+import com.example.lyricssearchforyoutube.FloatingViewService;
 
 public class MyAccessibilityService extends AccessibilityService {
 
@@ -22,18 +23,21 @@ public class MyAccessibilityService extends AccessibilityService {
         for(int i=0; i<source.getChildCount(); i++){
             list.add(source.getChild(i));
             if(list.get(i).getClassName().equals("android.widget.LinearLayout")){
-                target = i;
-                break;
+                if(list.get(i).getChildCount() >= 4 && list.get(i).getChild(3).getText() != null){
+                    target = i;
+                    break;
+                }
             }
         }
 
         try{
-            if(list.size() >= 2 && list.get(target) != null && list.get(target).getChildCount() >= 4){
+            if(list.get(target) != null){
                 StrData.title = list.get(target).getChild(1).getText().toString();
                 StrData.artist = list.get(target).getChild(3).getText().toString();
+                Log.e("UPDATE", "Title : " + StrData.title + ", Artist : " + StrData.artist);
             }
         }catch(Exception e){
-            Log.e("Accessibility", "Skipping Exception, keep research");
+            Log.e("Accessibility", "Skipping Exceptions, keep research");
         }
     }
 

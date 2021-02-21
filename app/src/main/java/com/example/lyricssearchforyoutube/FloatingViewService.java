@@ -24,8 +24,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams floatWindowLayoutParam;
     private ViewGroup mFloatingView;
-    private View buttonView;
-    private View panelView;
+    private View buttonView, panelView, listView;
     private ImageView floatBtn, closeBtn, loadBtn;
     private int LAYOUT_TYPE;
 
@@ -50,6 +49,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
         loadBtn = mFloatingView.findViewById(R.id.loadButton);
         buttonView = mFloatingView.findViewById(R.id.buttonLayout);
         panelView = mFloatingView.findViewById(R.id.panelLayout);
+        listView = mFloatingView.findViewById(R.id.listLayout);
 
         loadBtn.setOnClickListener(this);
         floatBtn.setOnClickListener(this);
@@ -87,6 +87,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
             case R.id.loadButton:
                 ((TextView)panelView.findViewById(R.id.textView1)).setText(StrData.title);
                 ((TextView)panelView.findViewById(R.id.textView2)).setText(StrData.artist);
+                listView.setVisibility(View.VISIBLE);
                 break;
 
             case R.id.floatButton:
