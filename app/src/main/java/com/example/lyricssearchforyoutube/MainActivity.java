@@ -5,10 +5,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.graphics.Color;
 import android.net.Uri;
@@ -20,10 +21,14 @@ import android.view.accessibility.AccessibilityManager;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import com.example.lyricssearchforyoutube.widget.WidgetManager;
+
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final String youtubeMusicPackagePath = "com.google.android.apps.youtube.music";
+    private WidgetManager widget;
     private boolean ACCESSIBILITY_PERMISSION;
     private ImageButton startBtn;
     private AlertDialog dialog;
@@ -34,22 +39,33 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         checkAccessibilityPermission();
 
+        widget = WidgetManager.getWidget();
+        widget.stopService(MainActivity.this);
+
         startBtn = findViewById(R.id.startBtn);
-
-        if(isMyServiceRunning()){
-            //이미 플로팅 위젯 실행중일 때 종료
-            stopService(new Intent(MainActivity.this, FloatingViewService.class));
-        }
-
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // 다른 앱 위에 그리기 권한 체크
                 if(checkOverlayDisplayPermission()){
                     //플로팅 위젯 시작
-                    startService(new Intent(MainActivity.this, FloatingViewService.class));
+                    widget.startService( MainActivity.this );
+
+                    // youtube Music으로 화면전환
+                    if( existPackage(youtubeMusicPackagePath) ){
+                        // youtube music이 설치 되어있을시 화면 전환
+                        Intent intent = getPackageManager().getLaunchIntentForPackage(youtubeMusicPackagePath);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    }else{
+                        // 미설치시 youtube music 설치 화면으로 넘어감
+                        String url = "market://details?id=" + youtubeMusicPackagePath;
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        startActivity(i);
+                    }
+
                     //본 앱은 종료
-                    finish();
+                    // finish();
                 }
                 else{
                     //권한이 없으므로 설정으로 전송
@@ -60,15 +76,19 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private boolean isMyServiceRunning() {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        // 현재 실행중인 어플 중 플로팅 위젯이 실행중인지를 판단
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (FloatingViewService.class.getName().equals(service.service.getClassName())) {
+    private boolean checkOverlayDisplayPermission() {
+        // 안드로이드 마쉬멜로우 or API 23 이하 버전은
+        // 다른 앱 위에 그리기 권한 필요없음
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+            // '다른 앱 위에 그리기 권한' 유효성 판단
+            if (!Settings.canDrawOverlays(this)) {
+                return false;
+            } else {
                 return true;
             }
+        } else {
+            return true;
         }
-        return false;
     }
 
     private void requestOverlayDisplayPermission() {
@@ -95,18 +115,15 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private boolean checkOverlayDisplayPermission() {
-        // 안드로이드 마쉬멜로우 or API 23 이하 버전은
-        // 다른 앱 위에 그리기 권한 필요없음
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
-            // '다른 앱 위에 그리기 권한' 유효성 판단
-            if (!Settings.canDrawOverlays(this)) {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
+    private boolean checkAccessibilityPermission(){
+        ACCESSIBILITY_PERMISSION = isAccessibilityServiceEnabled(getApplicationContext(), MyAccessibilityService.class);
+        if(ACCESSIBILITY_PERMISSION){
+            Toast.makeText(getApplicationContext(), "접근성 권한 허가됨", Toast.LENGTH_SHORT).show();
             return true;
+        }else{
+            Toast.makeText(getApplicationContext(), "접근성 권한 허용 필요", Toast.LENGTH_LONG).show();
+            requestAccessibilityPermission();
+            return false;
         }
     }
 
@@ -147,15 +164,26 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private boolean checkAccessibilityPermission(){
-        ACCESSIBILITY_PERMISSION = isAccessibilityServiceEnabled(getApplicationContext(), MyAccessibilityService.class);
-        if(ACCESSIBILITY_PERMISSION){
-            Toast.makeText(getApplicationContext(), "접근성 권한 허가됨", Toast.LENGTH_SHORT).show();
-            return true;
-        }else{
-            Toast.makeText(getApplicationContext(), "접근성 권한 허용 필요", Toast.LENGTH_LONG).show();
-            requestAccessibilityPermission();
-            return false;
+    public boolean existPackage( String packagePath ) {
+        boolean isExist = false;
+
+        PackageManager pkgMgr = getPackageManager();
+        List<ResolveInfo> mApps;
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        mApps = pkgMgr.queryIntentActivities(mainIntent, 0);
+
+        try {
+            for (int i = 0; i < mApps.size(); i++) {
+                if(mApps.get(i).activityInfo.packageName.startsWith( packagePath )){
+                    isExist = true;
+                    break;
+                }
+            }
         }
+        catch (Exception e) {
+            isExist = false;
+        }
+        return isExist;
     }
 }
