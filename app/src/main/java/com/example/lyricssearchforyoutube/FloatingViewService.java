@@ -54,7 +54,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
         loadBtn.setOnClickListener(this);
         floatBtn.setOnClickListener(this);
         closeBtn.setOnClickListener(this);
-        panelView.findViewById(R.id.buttonExpandedLayout).setOnClickListener(this);
+        panelView.findViewById(R.id.homeButton).setOnClickListener(this);
         LAYOUT_TYPE = findLayoutType();
 
         floatWindowLayoutParam = new WindowManager.LayoutParams(
@@ -79,7 +79,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.buttonExpandedLayout:
+            case R.id.homeButton:
                 buttonView.setVisibility(View.VISIBLE);
                 panelView.setVisibility(View.GONE);
                 break;

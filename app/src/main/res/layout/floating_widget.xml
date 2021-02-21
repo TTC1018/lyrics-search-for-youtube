@@ -39,38 +39,23 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/round_shape"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:padding="8dp"
             android:visibility="gone">
 
-            <ImageView
-                android:id="@+id/buttonExpandedLayout"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/refreshbtn"
-                tools:ignore="ContentDescription" />
-
-            <ImageView
-                android:id="@+id/loadButton"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginLeft="10dp"
-                android:src="@drawable/lens"
-                tools:ignore="ContentDescription" />
-
             <LinearLayout
                 android:id="@+id/textLayout"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/textView1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingLeft="15dp"
-                    android:paddingTop="15dp"
-                    android:paddingRight="15dp"
+                    android:layout_width="270dp"
+                    android:layout_height="270dp"
+                    android:paddingLeft="10dp"
+                    android:paddingTop="10dp"
+                    android:paddingRight="10dp"
                     android:text="플로팅 패널"
                     android:textAlignment="center"
                     android:textAppearance="@style/Base.TextAppearance.AppCompat.Large"
@@ -86,6 +71,38 @@
                     android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"
                     android:textColor="@color/black"
                     android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/buttonGroup"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:background="@android:color/transparent"
+                android:padding="8dp"
+                android:visibility="visible">
+
+                <ImageView
+                    android:id="@+id/homeButton"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginLeft="30dp"
+                    android:src="@drawable/homebtn"
+                    tools:ignore="ContentDescription" />
+
+                <Space
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:id="@+id/loadButton"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginRight="30dp"
+                    android:src="@drawable/lens"
+                    tools:ignore="ContentDescription" />
+
             </LinearLayout>
 
         </LinearLayout>
