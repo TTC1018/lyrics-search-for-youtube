@@ -13,8 +13,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+
+import com.example.lyricssearchforyoutube.StrData.StrData;
 
 public class FloatingViewService extends Service implements View.OnClickListener {
 
@@ -23,8 +26,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
     private ViewGroup mFloatingView;
     private View buttonView;
     private View panelView;
-    private ImageView floatBtn;
-    private ImageView closeBtn;
+    private ImageView floatBtn, closeBtn, loadBtn;
     private int LAYOUT_TYPE;
 
     public FloatingViewService() { }
@@ -45,9 +47,11 @@ public class FloatingViewService extends Service implements View.OnClickListener
 
         closeBtn = mFloatingView.findViewById(R.id.closeButton);
         floatBtn = mFloatingView.findViewById(R.id.floatButton);
+        loadBtn = mFloatingView.findViewById(R.id.loadButton);
         buttonView = mFloatingView.findViewById(R.id.buttonLayout);
         panelView = mFloatingView.findViewById(R.id.panelLayout);
 
+        loadBtn.setOnClickListener(this);
         floatBtn.setOnClickListener(this);
         closeBtn.setOnClickListener(this);
         panelView.findViewById(R.id.buttonExpandedLayout).setOnClickListener(this);
@@ -78,6 +82,11 @@ public class FloatingViewService extends Service implements View.OnClickListener
             case R.id.buttonExpandedLayout:
                 buttonView.setVisibility(View.VISIBLE);
                 panelView.setVisibility(View.GONE);
+                break;
+
+            case R.id.loadButton:
+                ((TextView)panelView.findViewById(R.id.textView1)).setText(StrData.title);
+                ((TextView)panelView.findViewById(R.id.textView2)).setText(StrData.artist);
                 break;
 
             case R.id.floatButton:
