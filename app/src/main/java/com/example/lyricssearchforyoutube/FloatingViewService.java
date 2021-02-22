@@ -4,8 +4,10 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
-import android.util.DisplayMetrics;
+import android.os.Looper;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -15,9 +17,17 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import androidx.annotation.Nullable;
 
 import com.example.lyricssearchforyoutube.StrData.StrData;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class FloatingViewService extends Service implements View.OnClickListener {
 
@@ -99,7 +109,13 @@ public class FloatingViewService extends Service implements View.OnClickListener
             case R.id.loadButton:
                 ((TextView)panelView.findViewById(R.id.textView1)).setText(StrData.title);
                 ((TextView)panelView.findViewById(R.id.textView2)).setText(StrData.artist);
+                getInforms();
                 listView.setVisibility(View.VISIBLE);
+                songBtn[0].setText(StrData.titles[0] + " - " + StrData.artists[0]);
+                songBtn[1].setText(StrData.titles[1] + " - " + StrData.artists[1]);
+                songBtn[2].setText(StrData.titles[2] + " - " + StrData.artists[2]);
+                songBtn[3].setText(StrData.titles[3] + " - " + StrData.artists[3]);
+                songBtn[4].setText(StrData.titles[4] + " - " + StrData.artists[4]);
                 break;
 
             case R.id.floatButton:
@@ -116,20 +132,51 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 break;
 
             case R.id.song1:
-            case R.id.song2:
-            case R.id.song3:
-            case R.id.song4:
-            case R.id.song5:
+                getLyrics(StrData.links[0]);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
                 scrollView.setVisibility(View.VISIBLE);
                 ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
                 listBtn.setVisibility(View.VISIBLE);
+                loadBtn.setVisibility(View.INVISIBLE);
+                break;
+            case R.id.song2:
+                getLyrics(StrData.links[1]);
+                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
+                scrollView.setVisibility(View.VISIBLE);
+                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                listBtn.setVisibility(View.VISIBLE);
+                loadBtn.setVisibility(View.INVISIBLE);
+                break;
+            case R.id.song3:
+                getLyrics(StrData.links[2]);
+                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
+                scrollView.setVisibility(View.VISIBLE);
+                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                listBtn.setVisibility(View.VISIBLE);
+                loadBtn.setVisibility(View.INVISIBLE);
+                break;
+            case R.id.song4:
+                getLyrics(StrData.links[3]);
+                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
+                scrollView.setVisibility(View.VISIBLE);
+                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                listBtn.setVisibility(View.VISIBLE);
+                loadBtn.setVisibility(View.INVISIBLE);
+                break;
+            case R.id.song5:
+                getLyrics(StrData.links[4]);
+                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
+                scrollView.setVisibility(View.VISIBLE);
+                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                listBtn.setVisibility(View.VISIBLE);
+                loadBtn.setVisibility(View.INVISIBLE);
                 break;
 
             case R.id.listButton:
                 listBtn.setVisibility(View.INVISIBLE);
                 scrollView.setVisibility(View.GONE);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.VISIBLE);
+                loadBtn.setVisibility(View.VISIBLE);
                 break;
 
         }
@@ -177,6 +224,65 @@ public class FloatingViewService extends Service implements View.OnClickListener
             LAYOUT_TYPE = WindowManager.LayoutParams.TYPE_TOAST;
         }
         return LAYOUT_TYPE;
+    }
+
+    private void getInforms(){
+        new Thread(){
+            @Override
+            public void run(){
+                ArrayList<String> titles = new ArrayList<String>();
+                ArrayList<String> artists = new ArrayList<String>();
+                ArrayList<String> links = new ArrayList<String>();
+
+                try{
+                    String words[] = StrData.title.split("\\(");
+                    String url = "https://music.bugs.co.kr/search/integrated?q="+ words[0];
+                    Document doc = Jsoup.connect(url).get();
+
+                    for(Element title:doc.select(".lyrics .title a")) {
+                        String s = title.text();
+                        titles.add(s);
+                    }
+                    for(Element artist:doc.select(".lyrics .artist a")) {
+                        String s = artist.text();
+                        artists.add(s);
+                    }
+                    for(Element lyrics:doc.select("tr .lyrics a")) {
+                        links.add(lyrics.attr("abs:href"));
+                    }
+
+                }catch (IOException e){
+                    Log.e("LYRICSSEARCH", "Search Exception, keep search");
+                }
+                for(int i=0; i<titles.size(); i++){
+                    StrData.titles[i] = titles.get(i);
+                    StrData.artists[i] = artists.get(i);
+                    StrData.links[i] = links.get(i);
+                }
+            }
+        }.start();
+    }
+
+    private void getLyrics(String link){
+        new Thread() {
+            @Override
+            public void run() {
+                try{
+                    String url = link;
+                    Document doc = Jsoup.connect(url).get();
+                    doc.outputSettings(new Document.OutputSettings().prettyPrint(false));
+                    doc.select("br").append("\\n");
+                    doc.select("p").prepend("\\n\\n");
+
+                    Elements lyrics = doc.select("div.lyricsContainer xmp");
+                    StrData.lyrics = lyrics.html().replaceAll("\\\\n", "\n");
+                }catch (IOException e){
+                    Log.e("GETLYRICS", "failed to get lyrics");
+                }
+
+            }
+
+        }.start();
     }
 
     @Override

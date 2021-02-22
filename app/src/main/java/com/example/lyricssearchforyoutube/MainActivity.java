@@ -21,8 +21,15 @@ import android.view.accessibility.AccessibilityManager;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import com.example.lyricssearchforyoutube.StrData.StrData;
 import com.example.lyricssearchforyoutube.widget.WidgetManager;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -186,4 +193,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return isExist;
     }
+
+
 }
