@@ -24,8 +24,9 @@ public class FloatingViewService extends Service implements View.OnClickListener
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams floatWindowLayoutParam;
     private ViewGroup mFloatingView;
-    private View buttonView, panelView, listView;
-    private ImageView floatBtn, closeBtn, loadBtn;
+    private View buttonView, panelView, listView, scrollView;
+    private ImageView floatBtn, closeBtn, loadBtn, listBtn;
+    private TextView songBtn[];
     private int LAYOUT_TYPE;
 
     public FloatingViewService() { }
@@ -46,14 +47,25 @@ public class FloatingViewService extends Service implements View.OnClickListener
 
         closeBtn = mFloatingView.findViewById(R.id.closeButton);
         floatBtn = mFloatingView.findViewById(R.id.floatButton);
+        listBtn = mFloatingView.findViewById(R.id.listButton);
         loadBtn = mFloatingView.findViewById(R.id.loadButton);
         buttonView = mFloatingView.findViewById(R.id.buttonLayout);
         panelView = mFloatingView.findViewById(R.id.panelLayout);
         listView = mFloatingView.findViewById(R.id.listLayout);
+        scrollView = mFloatingView.findViewById(R.id.scrollView);
+        songBtn = new TextView[5];
+        songBtn[0] = listView.findViewById(R.id.song1);
+        songBtn[1] = listView.findViewById(R.id.song2);
+        songBtn[2] = listView.findViewById(R.id.song3);
+        songBtn[3] = listView.findViewById(R.id.song4);
+        songBtn[4] = listView.findViewById(R.id.song5);
+
 
         loadBtn.setOnClickListener(this);
         floatBtn.setOnClickListener(this);
         closeBtn.setOnClickListener(this);
+        listBtn.setOnClickListener(this);
+        for(int i=0; i<5; i++) songBtn[i].setOnClickListener(this);
         panelView.findViewById(R.id.homeButton).setOnClickListener(this);
         LAYOUT_TYPE = findLayoutType();
 
@@ -102,6 +114,24 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 backToHome.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(backToHome);
                 break;
+
+            case R.id.song1:
+            case R.id.song2:
+            case R.id.song3:
+            case R.id.song4:
+            case R.id.song5:
+                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
+                scrollView.setVisibility(View.VISIBLE);
+                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                listBtn.setVisibility(View.VISIBLE);
+                break;
+
+            case R.id.listButton:
+                listBtn.setVisibility(View.INVISIBLE);
+                scrollView.setVisibility(View.GONE);
+                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.VISIBLE);
+                break;
+
         }
     }
 
