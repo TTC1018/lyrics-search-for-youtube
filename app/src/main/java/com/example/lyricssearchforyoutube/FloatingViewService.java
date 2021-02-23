@@ -6,7 +6,7 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -31,13 +31,15 @@ import java.util.ArrayList;
 
 public class FloatingViewService extends Service implements View.OnClickListener {
 
+    MyHandler mHandler;
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams floatWindowLayoutParam;
     private ViewGroup mFloatingView;
-    private View buttonView, panelView, listView, scrollView;
+    private static View buttonView, panelView, listView, scrollView;
     private ImageView floatBtn, closeBtn, loadBtn, listBtn;
-    private TextView songBtn[];
+    private static TextView songBtn[];
     private int LAYOUT_TYPE;
+    private Thread lyricsThr;
 
     public FloatingViewService() { }
 
@@ -49,6 +51,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
     public void onCreate() {
         super.onCreate();
 
+        mHandler = new MyHandler();
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
         //floating_widget.xml 읽어오기
@@ -107,15 +110,12 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 break;
 
             case R.id.loadButton:
-                ((TextView)panelView.findViewById(R.id.textView1)).setText(StrData.title);
-                ((TextView)panelView.findViewById(R.id.textView2)).setText(StrData.artist);
+                ((TextView)panelView.findViewById(R.id.titleView)).setText(StrData.title);
+                ((TextView)panelView.findViewById(R.id.artistView)).setText(StrData.artist);
+                for(int i=0; i<5; i++) songBtn[i].setText("");
+                songBtn[0].setText("노래 검색 중..");
                 getInforms();
                 listView.setVisibility(View.VISIBLE);
-                songBtn[0].setText(StrData.titles[0] + " - " + StrData.artists[0]);
-                songBtn[1].setText(StrData.titles[1] + " - " + StrData.artists[1]);
-                songBtn[2].setText(StrData.titles[2] + " - " + StrData.artists[2]);
-                songBtn[3].setText(StrData.titles[3] + " - " + StrData.artists[3]);
-                songBtn[4].setText(StrData.titles[4] + " - " + StrData.artists[4]);
                 break;
 
             case R.id.floatButton:
@@ -132,48 +132,44 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 break;
 
             case R.id.song1:
-                getLyrics(StrData.links[0]);
+                getLyrics(1);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
                 scrollView.setVisibility(View.VISIBLE);
-                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
                 listBtn.setVisibility(View.VISIBLE);
                 loadBtn.setVisibility(View.INVISIBLE);
                 break;
             case R.id.song2:
-                getLyrics(StrData.links[1]);
+                getLyrics(2);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
                 scrollView.setVisibility(View.VISIBLE);
-                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
                 listBtn.setVisibility(View.VISIBLE);
                 loadBtn.setVisibility(View.INVISIBLE);
                 break;
             case R.id.song3:
-                getLyrics(StrData.links[2]);
+                getLyrics(3);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
                 scrollView.setVisibility(View.VISIBLE);
-                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
                 listBtn.setVisibility(View.VISIBLE);
                 loadBtn.setVisibility(View.INVISIBLE);
                 break;
             case R.id.song4:
-                getLyrics(StrData.links[3]);
+                getLyrics(4);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
                 scrollView.setVisibility(View.VISIBLE);
-                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
                 listBtn.setVisibility(View.VISIBLE);
                 loadBtn.setVisibility(View.INVISIBLE);
                 break;
             case R.id.song5:
-                getLyrics(StrData.links[4]);
+                getLyrics(5);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
                 scrollView.setVisibility(View.VISIBLE);
-                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
                 listBtn.setVisibility(View.VISIBLE);
                 loadBtn.setVisibility(View.INVISIBLE);
                 break;
 
             case R.id.listButton:
                 listBtn.setVisibility(View.INVISIBLE);
+                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText("");
                 scrollView.setVisibility(View.GONE);
                 for(int i=0; i<5; i++) songBtn[i].setVisibility(View.VISIBLE);
                 loadBtn.setVisibility(View.VISIBLE);
@@ -227,48 +223,50 @@ public class FloatingViewService extends Service implements View.OnClickListener
     }
 
     private void getInforms(){
-        new Thread(){
+        lyricsThr = new Thread(){
             @Override
             public void run(){
-                ArrayList<String> titles = new ArrayList<String>();
-                ArrayList<String> artists = new ArrayList<String>();
-                ArrayList<String> links = new ArrayList<String>();
+                    ArrayList<String> titles = new ArrayList<String>();
+                    ArrayList<String> artists = new ArrayList<String>();
+                    ArrayList<String> links = new ArrayList<String>();
+                    try{
+                        String words[] = StrData.title.split("\\(");
+                        String url = "https://music.bugs.co.kr/search/integrated?q="+ words[0];
+                        Document doc = Jsoup.connect(url).get();
 
-                try{
-                    String words[] = StrData.title.split("\\(");
-                    String url = "https://music.bugs.co.kr/search/integrated?q="+ words[0];
-                    Document doc = Jsoup.connect(url).get();
+                        for(Element title:doc.select(".lyrics .title a")) {
+                            String s = title.text();
+                            titles.add(s);
+                        }
+                        for(Element artist:doc.select(".lyrics .artist a")) {
+                            String s = artist.text();
+                            artists.add(s);
+                        }
+                        for(Element lyrics:doc.select("tr .lyrics a")) {
+                            links.add(lyrics.attr("abs:href"));
+                        }
 
-                    for(Element title:doc.select(".lyrics .title a")) {
-                        String s = title.text();
-                        titles.add(s);
+                    }catch (IOException e){
+                        Log.e("LYRICSSEARCH", "Search Exception, keep search");
                     }
-                    for(Element artist:doc.select(".lyrics .artist a")) {
-                        String s = artist.text();
-                        artists.add(s);
+                    for(int i=0; i<titles.size(); i++){
+                        StrData.titles[i] = titles.get(i);
+                        StrData.artists[i] = artists.get(i);
+                        StrData.links[i] = links.get(i);
                     }
-                    for(Element lyrics:doc.select("tr .lyrics a")) {
-                        links.add(lyrics.attr("abs:href"));
-                    }
-
-                }catch (IOException e){
-                    Log.e("LYRICSSEARCH", "Search Exception, keep search");
-                }
-                for(int i=0; i<titles.size(); i++){
-                    StrData.titles[i] = titles.get(i);
-                    StrData.artists[i] = artists.get(i);
-                    StrData.links[i] = links.get(i);
-                }
+                    mHandler.sendEmptyMessage(1000);
             }
-        }.start();
+        };
+        lyricsThr.start();
     }
 
-    private void getLyrics(String link){
+    private void getLyrics(int order){
         new Thread() {
             @Override
             public void run() {
+                mHandler.sendEmptyMessage(1999);
                 try{
-                    String url = link;
+                    String url = StrData.links[order-1];
                     Document doc = Jsoup.connect(url).get();
                     doc.outputSettings(new Document.OutputSettings().prettyPrint(false));
                     doc.select("br").append("\\n");
@@ -279,7 +277,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 }catch (IOException e){
                     Log.e("GETLYRICS", "failed to get lyrics");
                 }
-
+                mHandler.sendEmptyMessage(2000);
             }
 
         }.start();
@@ -290,5 +288,26 @@ public class FloatingViewService extends Service implements View.OnClickListener
         super.onDestroy();
         stopSelf();
         mWindowManager.removeView(mFloatingView);
+    }
+
+    public static class MyHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg){
+            switch(msg.what){
+                case 1000:
+                    songBtn[0].setText(StrData.titles[0] + " - " + StrData.artists[0]);
+                    songBtn[1].setText(StrData.titles[1] + " - " + StrData.artists[1]);
+                    songBtn[2].setText(StrData.titles[2] + " - " + StrData.artists[2]);
+                    songBtn[3].setText(StrData.titles[3] + " - " + StrData.artists[3]);
+                    songBtn[4].setText(StrData.titles[4] + " - " + StrData.artists[4]);
+                    break;
+                case 1999:
+                    ((TextView)scrollView.findViewById(R.id.lyricsView)).setText("불러오는 중...");
+                    break;
+                case 2000:
+                    ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                    break;
+            }
+        }
     }
 }
