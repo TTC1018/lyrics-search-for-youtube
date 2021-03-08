@@ -127,7 +127,8 @@ public class MainActivity extends AppCompatActivity {
         if(ACCESSIBILITY_PERMISSION){
             Toast.makeText(getApplicationContext(), "접근성 권한 허가됨", Toast.LENGTH_SHORT).show();
             return true;
-        }else{
+        }
+        else{
             Toast.makeText(getApplicationContext(), "접근성 권한 허용 필요", Toast.LENGTH_LONG).show();
             requestAccessibilityPermission();
             return false;

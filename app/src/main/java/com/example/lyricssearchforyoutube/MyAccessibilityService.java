@@ -38,6 +38,11 @@ public class MyAccessibilityService extends AccessibilityService {
                 StrData.artist = list.get(target).getChild(3).getText().toString();
                 Log.e("UPDATE", "Title : " + StrData.title + ", Artist : " + StrData.artist);
             }
+
+
+
+
+
         }catch(Exception e){
             Log.e("Accessibility", "Skipping Exceptions, keep research");
         }
