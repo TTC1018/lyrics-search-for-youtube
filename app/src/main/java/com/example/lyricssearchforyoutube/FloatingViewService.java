@@ -277,7 +277,13 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 }catch (IOException e){
                     Log.e("GETLYRICS", "failed to get lyrics");
                 }
-                mHandler.sendEmptyMessage(2000);
+
+                if(StrData.lyrics.equals("")){
+                    mHandler.sendEmptyMessage(2001);
+                }else{
+                    mHandler.sendEmptyMessage(2000);
+                }
+
             }
 
         }.start();
@@ -306,6 +312,9 @@ public class FloatingViewService extends Service implements View.OnClickListener
                     break;
                 case 2000:
                     ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                    break;
+                case 2001:
+                    ((TextView)scrollView.findViewById(R.id.lyricsView)).setText("성인인증이 필요한 곡은 불러올 수 없습니다.");
                     break;
             }
         }
