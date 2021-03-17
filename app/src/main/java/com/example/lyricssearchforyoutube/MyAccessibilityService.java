@@ -16,6 +16,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+
         AccessibilityNodeInfo source = event.getSource();
         if(source == null) return;
 
@@ -34,9 +35,9 @@ public class MyAccessibilityService extends AccessibilityService {
             }
 
             if(target != -1 && list.get(target) != null){
-                StrData.title = list.get(target).getChild(1).getText().toString();
-                StrData.artist = list.get(target).getChild(3).getText().toString();
-                Log.e("UPDATE", "Title : " + StrData.title + ", Artist : " + StrData.artist);
+                StrData.parsingTitle = list.get(target).getChild(1).getText().toString();
+                StrData.parsingArtist = list.get(target).getChild(3).getText().toString();
+                Log.e("UPDATE", "Title : " + StrData.parsingTitle + ", Artist : " + StrData.parsingArtist);
             }
 
 

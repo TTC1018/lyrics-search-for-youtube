@@ -14,20 +14,21 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TextView;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import androidx.annotation.Nullable;
 
 import com.example.lyricssearchforyoutube.StrData.StrData;
+import com.example.lyricssearchforyoutube.data.Music;
+import com.example.lyricssearchforyoutube.parsing.BugsLyricsService;
+import com.example.lyricssearchforyoutube.parsing.GoogleLyricsService;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 public class FloatingViewService extends Service implements View.OnClickListener {
 
@@ -35,11 +36,29 @@ public class FloatingViewService extends Service implements View.OnClickListener
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams floatWindowLayoutParam;
     private ViewGroup mFloatingView;
-    private static View buttonView, panelView, listView, scrollView;
-    private ImageView floatBtn, closeBtn, loadBtn, listBtn;
-    private static TextView songBtn[];
+
     private int LAYOUT_TYPE;
     private Thread lyricsThr;
+
+
+    private BugsLyricsService bugsLyricsService;
+    private GoogleLyricsService googleLyricsService;
+    List<Music> musicList;
+
+    private View collapsedLayout, expandedLayout, appHeadLayout, appBodyLayout, appBottomLayout, scrollView;
+    private ImageView expandedButton, closeButton, homeButton, searchButton;
+    private TextView parsingTitleTextView, parsingArtistTextView;
+    private Spinner strategySpinner;
+    private EditText searchEditText;
+
+    private String searchStrategy = "벅스";
+ //   private InputMethodManager imm;
+
+    private static View songBtn[];
+    private static TextView songTitle[];
+    private static TextView songArtist[];
+    private static TextView lyricsView;
+
 
     public FloatingViewService() { }
 
@@ -54,34 +73,85 @@ public class FloatingViewService extends Service implements View.OnClickListener
         mHandler = new MyHandler();
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
+        bugsLyricsService = new BugsLyricsService();
+        googleLyricsService = new GoogleLyricsService();
+
         //floating_widget.xml 읽어오기
         LayoutInflater inflater = (LayoutInflater) getBaseContext().getSystemService(LAYOUT_INFLATER_SERVICE);
         mFloatingView = (ViewGroup) inflater.inflate(R.layout.floating_widget, null);
 
-        closeBtn = mFloatingView.findViewById(R.id.closeButton);
-        floatBtn = mFloatingView.findViewById(R.id.floatButton);
-        listBtn = mFloatingView.findViewById(R.id.listButton);
-        loadBtn = mFloatingView.findViewById(R.id.loadButton);
-        buttonView = mFloatingView.findViewById(R.id.buttonLayout);
-        panelView = mFloatingView.findViewById(R.id.panelLayout);
-        listView = mFloatingView.findViewById(R.id.listLayout);
-        scrollView = mFloatingView.findViewById(R.id.scrollView);
-        songBtn = new TextView[5];
-        songBtn[0] = listView.findViewById(R.id.song1);
-        songBtn[1] = listView.findViewById(R.id.song2);
-        songBtn[2] = listView.findViewById(R.id.song3);
-        songBtn[3] = listView.findViewById(R.id.song4);
-        songBtn[4] = listView.findViewById(R.id.song5);
+        // 작은 화면
+        collapsedLayout = mFloatingView.findViewById(R.id.collapsedLayout);
+        closeButton     = collapsedLayout.findViewById(R.id.closeButton);
+        expandedButton  = collapsedLayout.findViewById(R.id.expandedButton);
+
+        // 확장 화면
+        expandedLayout  = mFloatingView.findViewById(R.id.expandedLayout);
+        // 확장 화면 헤더 : psring 정보들
+        appHeadLayout         = expandedLayout.findViewById(R.id.appHeadLayout);
+        parsingTitleTextView  = appHeadLayout.findViewById(R.id.parsingTitleTextView);
+        parsingArtistTextView = appHeadLayout.findViewById(R.id.parsingArtistTextView);
+        strategySpinner       = appHeadLayout.findViewById(R.id.strategySpinner);
+        // 확장 화면 바디 : 가사 리스트업 / 가사 표시하는 frame
+        appBodyLayout   = expandedLayout.findViewById(R.id.appBodyLayout);
+        songBtn         = new View[5];
+        songBtn[0]      = appBodyLayout.findViewById(R.id.song1);
+        songBtn[1]      = appBodyLayout.findViewById(R.id.song2);
+        songBtn[2]      = appBodyLayout.findViewById(R.id.song3);
+        songBtn[3]      = appBodyLayout.findViewById(R.id.song4);
+        songBtn[4]      = appBodyLayout.findViewById(R.id.song5);
+        songTitle       = new TextView[5];
+        songTitle[0]    = appBodyLayout.findViewById(R.id.song1TitleTextView);
+        songTitle[1]    = appBodyLayout.findViewById(R.id.song2TitleTextView);
+        songTitle[2]    = appBodyLayout.findViewById(R.id.song3TitleTextView);
+        songTitle[3]    = appBodyLayout.findViewById(R.id.song4TitleTextView);
+        songTitle[4]    = appBodyLayout.findViewById(R.id.song5TitleTextView);
+        songArtist      = new TextView[5];
+        songArtist[0]   = appBodyLayout.findViewById(R.id.song1ArtistTextView);
+        songArtist[1]   = appBodyLayout.findViewById(R.id.song2ArtistTextView);
+        songArtist[2]   = appBodyLayout.findViewById(R.id.song3ArtistTextView);
+        songArtist[3]   = appBodyLayout.findViewById(R.id.song4ArtistTextView);
+        songArtist[4]   = appBodyLayout.findViewById(R.id.song5ArtistTextView);
+        scrollView      = appBodyLayout.findViewById(R.id.scrollView);
+        lyricsView      = scrollView.findViewById(R.id.lyricsView);
+        // 확장 화면 바텀 : 축소버튼, 검색값 직접입력, 검색버튼
+        appBottomLayout = expandedLayout.findViewById(R.id.appBottomLayout);
+        homeButton      = mFloatingView.findViewById(R.id.homeButton);
+        searchEditText  = mFloatingView.findViewById(R.id.searchEditText);
+        searchButton    = mFloatingView.findViewById(R.id.searchButton);
 
 
-        loadBtn.setOnClickListener(this);
-        floatBtn.setOnClickListener(this);
-        closeBtn.setOnClickListener(this);
-        listBtn.setOnClickListener(this);
+        // Spinner설정
+        strategySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if(strategySpinner.getSelectedItemPosition() >= 0) {
+                    String selectedItem = strategySpinner.getSelectedItem().toString();
+                    switch(selectedItem) {
+                        case "벅스":
+                            searchStrategy = "벅스";
+                            break;
+                        case "구글":
+                            searchStrategy = "구글";
+                            break;
+                        case "직접입력":
+                            searchStrategy = "직접입력";
+                            break;
+                    }
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) { }
+        });
+
+
+        expandedButton.setOnClickListener(this);
+        closeButton.setOnClickListener(this);
+        homeButton.setOnClickListener(this);
+        searchButton.setOnClickListener(this);
         for(int i=0; i<5; i++) songBtn[i].setOnClickListener(this);
-        panelView.findViewById(R.id.homeButton).setOnClickListener(this);
+        searchEditText.setOnClickListener(this);
         LAYOUT_TYPE = findLayoutType();
-
         floatWindowLayoutParam = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -98,83 +168,73 @@ public class FloatingViewService extends Service implements View.OnClickListener
         mWindowManager.addView(mFloatingView, floatWindowLayoutParam);
 
         mFloatingView.setOnTouchListener(makeTouchListener());
-        floatBtn.setOnTouchListener(makeTouchListener());
+        expandedButton.setOnTouchListener(makeTouchListener());
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.homeButton:
-                buttonView.setVisibility(View.VISIBLE);
-                panelView.setVisibility(View.GONE);
-                break;
-
-            case R.id.loadButton:
-                ((TextView)panelView.findViewById(R.id.titleView)).setText(StrData.title);
-                ((TextView)panelView.findViewById(R.id.artistView)).setText(StrData.artist);
-                for(int i=0; i<5; i++) songBtn[i].setText("");
-                songBtn[0].setText("노래 검색 중..");
-                getInforms();
-                listView.setVisibility(View.VISIBLE);
-                break;
-
-            case R.id.floatButton:
-                buttonView.setVisibility(View.GONE);
-                panelView.setVisibility(View.VISIBLE);
-                break;
-
             case R.id.closeButton:
+                // 종료버튼
                 stopSelf();
                 mWindowManager.removeView(mFloatingView);
                 Intent backToHome = new Intent(FloatingViewService.this, MainActivity.class);
                 backToHome.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(backToHome);
                 break;
+            case R.id.expandedButton:
+                // 화면 확장
+                collapsedLayout.setVisibility(View.GONE);
+                expandedLayout.setVisibility(View.VISIBLE);
+                break;
+            case R.id.homeButton:
+                // 화면 축소
+                collapsedLayout.setVisibility(View.VISIBLE);
+                expandedLayout.setVisibility(View.GONE);
+                break;
+
+
+            case R.id.searchButton:
+                // parsing된 데이터 적용
+                setParsingData();
+                searchService();
+
+                switch (searchStrategy) {
+                    case "직접입력":
+                    case "벅스":
+                        openSongList();
+                        break;
+                    case "구글":
+                        openLyricsView();
+                        break;
+                }
+                break;
 
             case R.id.song1:
-                getLyrics(1);
-                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
-                scrollView.setVisibility(View.VISIBLE);
-                listBtn.setVisibility(View.VISIBLE);
-                loadBtn.setVisibility(View.INVISIBLE);
+                openLyricsView(0);
                 break;
             case R.id.song2:
-                getLyrics(2);
-                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
-                scrollView.setVisibility(View.VISIBLE);
-                listBtn.setVisibility(View.VISIBLE);
-                loadBtn.setVisibility(View.INVISIBLE);
+                openLyricsView(1);
                 break;
             case R.id.song3:
-                getLyrics(3);
-                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
-                scrollView.setVisibility(View.VISIBLE);
-                listBtn.setVisibility(View.VISIBLE);
-                loadBtn.setVisibility(View.INVISIBLE);
+                openLyricsView(2);
                 break;
             case R.id.song4:
-                getLyrics(4);
-                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
-                scrollView.setVisibility(View.VISIBLE);
-                listBtn.setVisibility(View.VISIBLE);
-                loadBtn.setVisibility(View.INVISIBLE);
+                openLyricsView(3);
                 break;
             case R.id.song5:
-                getLyrics(5);
-                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
-                scrollView.setVisibility(View.VISIBLE);
-                listBtn.setVisibility(View.VISIBLE);
-                loadBtn.setVisibility(View.INVISIBLE);
+                openLyricsView(4);
                 break;
 
-            case R.id.listButton:
-                listBtn.setVisibility(View.INVISIBLE);
-                ((TextView)scrollView.findViewById(R.id.lyricsView)).setText("");
-                scrollView.setVisibility(View.GONE);
-                for(int i=0; i<5; i++) songBtn[i].setVisibility(View.VISIBLE);
-                loadBtn.setVisibility(View.VISIBLE);
-                break;
+            case R.id.searchEditText:
+                if( searchStrategy.equals( "직접입력" ) ){
+                    searchEditText.clearFocus();
+                    searchEditText.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Service.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(searchEditText, 0);
 
+                }
+                break;
         }
     }
 
@@ -222,61 +282,85 @@ public class FloatingViewService extends Service implements View.OnClickListener
         return LAYOUT_TYPE;
     }
 
-    private void getInforms(){
-        lyricsThr = new Thread(){
+    private void setParsingData(){
+        parsingTitleTextView.setText(StrData.parsingTitle);
+        parsingArtistTextView.setText(StrData.parsingArtist);
+    }
+
+
+    private void searchService(){
+        lyricsThr = new Thread() {
             @Override
-            public void run(){
-                    ArrayList<String> titles = new ArrayList<String>();
-                    ArrayList<String> artists = new ArrayList<String>();
-                    ArrayList<String> links = new ArrayList<String>();
-                    try{
-                        String words[] = StrData.title.split("\\(");
-                        String url = "https://music.bugs.co.kr/search/integrated?q="+ words[0];
-                        Document doc = Jsoup.connect(url).get();
+            public void run() {
+                mHandler.sendEmptyMessage(1999);
 
-                        for(Element title:doc.select(".lyrics .title a")) {
-                            String s = title.text();
-                            titles.add(s);
-                        }
-                        for(Element artist:doc.select(".lyrics .artist a")) {
-                            String s = artist.text();
-                            artists.add(s);
-                        }
-                        for(Element lyrics:doc.select("tr .lyrics a")) {
-                            links.add(lyrics.attr("abs:href"));
+                String musicQuery = getSearchQuery();
+
+                Log.e("musicQuery", musicQuery);
+
+                switch (searchStrategy) {
+                    case "직접입력":
+                        musicQuery = searchEditText.getText().toString(); // editText data
+                    case "벅스":
+                        musicList = bugsLyricsService.searchMusic(musicQuery);
+
+                        for( int i = 0 ; i < 5 ; i++ ){
+                            if ( i < musicList.size() ) StrData.music[i] = musicList.get(i);
+                            else StrData.music[i] = new Music();
                         }
 
-                    }catch (IOException e){
-                        Log.e("LYRICSSEARCH", "Search Exception, keep search");
-                    }
-                    for(int i=0; i<titles.size(); i++){
-                        StrData.titles[i] = titles.get(i);
-                        StrData.artists[i] = artists.get(i);
-                        StrData.links[i] = links.get(i);
-                    }
-                    mHandler.sendEmptyMessage(1000);
+                        mHandler.sendEmptyMessage(1000);
+                        break;
+                    case "구글":
+                        String lyrics = googleLyricsService.getGoolgeLyrics(musicQuery);
+                        StrData.lyrics = lyrics;
+
+                        if(StrData.lyrics.equals("")){
+                            mHandler.sendEmptyMessage(2001);
+                        }else{
+                            mHandler.sendEmptyMessage(2000);
+                        }
+                        break;
+                }
             }
         };
         lyricsThr.start();
     }
 
-    private void getLyrics(int order){
+    private String getSearchQuery(){
+        String musicQuery = StrData.parsingTitle; // parsing data
+        int featuring = musicQuery.indexOf( "(" );
+        if( featuring != -1 ) musicQuery = musicQuery.substring( 0,  featuring);
+
+        return musicQuery;
+    }
+
+    private void openSongList(){
+        appBodyLayout.setVisibility(View.VISIBLE);
+        for(int i=0; i<5; i++) songBtn[i].setVisibility(View.VISIBLE);
+        scrollView.setVisibility(View.GONE);
+    }
+
+
+    private void openLyricsView(){
+        lyricsView.setText( StrData.lyrics );
+
+        for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
+        scrollView.setVisibility(View.VISIBLE);
+    }
+
+    private void openLyricsView( int songNum ){
+        if( StrData.music[songNum].getLyricsLink() == "" ) return;
+
         new Thread() {
             @Override
             public void run() {
                 mHandler.sendEmptyMessage(1999);
-                try{
-                    String url = StrData.links[order-1];
-                    Document doc = Jsoup.connect(url).get();
-                    doc.outputSettings(new Document.OutputSettings().prettyPrint(false));
-                    doc.select("br").append("\\n");
-                    doc.select("p").prepend("\\n\\n");
 
-                    Elements lyrics = doc.select("div.lyricsContainer xmp");
-                    StrData.lyrics = lyrics.html().replaceAll("\\\\n", "\n");
-                }catch (IOException e){
-                    Log.e("GETLYRICS", "failed to get lyrics");
-                }
+                String link = StrData.music[songNum].getLyricsLink();
+                String lyrics = bugsLyricsService.getBugsLyrics(link);
+                StrData.lyrics = lyrics;
+
 
                 if(StrData.lyrics.equals("")){
                     mHandler.sendEmptyMessage(2001);
@@ -285,36 +369,33 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 }
 
             }
-
         }.start();
+
+        openLyricsView();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        stopSelf();
-        mWindowManager.removeView(mFloatingView);
-    }
+
+
+
 
     public static class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg){
             switch(msg.what){
                 case 1000:
-                    songBtn[0].setText(StrData.titles[0] + " - " + StrData.artists[0]);
-                    songBtn[1].setText(StrData.titles[1] + " - " + StrData.artists[1]);
-                    songBtn[2].setText(StrData.titles[2] + " - " + StrData.artists[2]);
-                    songBtn[3].setText(StrData.titles[3] + " - " + StrData.artists[3]);
-                    songBtn[4].setText(StrData.titles[4] + " - " + StrData.artists[4]);
+                    for( int i = 0 ; i < 5 ; i++ ) {
+                        songTitle[i].setText( StrData.music[i].getTitle() );
+                        songArtist[i].setText( StrData.music[i].getArtist() );
+                    }
                     break;
                 case 1999:
-                    ((TextView)scrollView.findViewById(R.id.lyricsView)).setText("불러오는 중...");
+                    lyricsView.setText("불러오는 중...");
                     break;
                 case 2000:
-                    ((TextView)scrollView.findViewById(R.id.lyricsView)).setText(StrData.lyrics);
+                    lyricsView.setText(StrData.lyrics);
                     break;
                 case 2001:
-                    ((TextView)scrollView.findViewById(R.id.lyricsView)).setText("성인인증이 필요한 곡은 불러올 수 없습니다.");
+                    lyricsView.setText("성인인증이 필요한 곡은 불러올 수 없습니다.");
                     break;
             }
         }
