@@ -9,18 +9,20 @@ import java.util.ArrayList;
 
 public class GoogleLyricsService {
 
-    public String getGoolgeLyrics(String title ){
-        ArrayList<String> lyrics = new ArrayList<String>();
+    public String getGoogleLyrics(String title ){
+//        ArrayList<String> lyrics = new ArrayList<String>();
+        String lyrics = "";
         final StringBuilder t_builder = new StringBuilder();
 
         try{
             String url = "https://www.google.com/search?q="+ title;
             Document doc = Jsoup.connect(url).get();
+            doc.outputSettings(new Document.OutputSettings().prettyPrint(false));
+            doc.select("span").append("\\n\\n");
 
             for(Element element:doc.select("div.ujudUb")) {
-                String s = element.text();
-                lyrics.add(s);
-                lyrics.add("\n");
+                if(element.text().endsWith("더보기")) continue;
+                lyrics += element.text().replaceAll("\\\\n", "\n");;
             }
             t_builder.append(lyrics).append("\n");
 
@@ -28,7 +30,7 @@ public class GoogleLyricsService {
             t_builder.append("error");
         }
 
-        return lyrics.toString();
+        return lyrics;
     }
 
 }

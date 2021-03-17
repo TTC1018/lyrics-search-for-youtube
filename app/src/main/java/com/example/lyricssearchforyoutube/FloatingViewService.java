@@ -312,7 +312,7 @@ public class FloatingViewService extends Service implements View.OnClickListener
                         mHandler.sendEmptyMessage(1000);
                         break;
                     case "구글":
-                        String lyrics = googleLyricsService.getGoolgeLyrics(musicQuery);
+                        String lyrics = googleLyricsService.getGoogleLyrics(musicQuery);
                         StrData.lyrics = lyrics;
 
                         if(StrData.lyrics.equals("")){
