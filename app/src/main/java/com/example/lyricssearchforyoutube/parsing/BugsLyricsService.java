@@ -19,9 +19,12 @@ public class BugsLyricsService {
 
         try{
             Document doc = Jsoup.connect(link).get();
+            doc.outputSettings(new Document.OutputSettings().prettyPrint(false));
+            doc.select("br").append("\\n");
+            doc.select("p").prepend("\\n\\n");
 
             Elements lyricsElement = doc.select("div.lyricsContainer xmp");
-            lyrics = lyricsElement.text();
+            lyrics = lyricsElement.html().replaceAll("\\\\n", "\n");
 
             ly_builder.append(lyrics).append("\n");
 
