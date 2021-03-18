@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 
 import java.util.ArrayList;
@@ -22,9 +23,10 @@ public class DescriptionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_description);
         ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-        viewPager.setOffscreenPageLimit(9);
+        viewPager.setOffscreenPageLimit(8);
 
         PageAdapter adapter =  new PageAdapter(getSupportFragmentManager());
         Fragment1 f1 = new Fragment1();
@@ -35,7 +37,7 @@ public class DescriptionActivity extends AppCompatActivity {
         Fragment6 f6 = new Fragment6();
         Fragment7 f7 = new Fragment7();
         Fragment8 f8 = new Fragment8();
-        Fragment9 f9 = new Fragment9();
+
 
 
         adapter.addItem(f1);
@@ -46,7 +48,7 @@ public class DescriptionActivity extends AppCompatActivity {
         adapter.addItem(f6);
         adapter.addItem(f7);
         adapter.addItem(f8);
-        adapter.addItem(f9);
+
 
 
 

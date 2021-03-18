@@ -13,5 +13,11 @@
         android:layout_height="wrap_content"
         android:src="@drawable/first" />
 
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="294dp"
+        android:layout_height="51dp"
+        android:text="먼저, 접근성 권한을 허용해 주세요." />
+
 
 </FrameLayout>
