@@ -1,4 +1,4 @@
-package com.example.lyricssearchforyoutube;
+package com.example.lyricssearchforyoutube.parsing;
 
 import android.accessibilityservice.AccessibilityService;
 import android.graphics.Rect;
@@ -9,7 +9,7 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-import com.example.lyricssearchforyoutube.StrData.StrData;
+import com.example.lyricssearchforyoutube.StrData;
 import com.example.lyricssearchforyoutube.FloatingViewService;
 
 public class MyAccessibilityService extends AccessibilityService {
@@ -39,10 +39,6 @@ public class MyAccessibilityService extends AccessibilityService {
                 StrData.parsingArtist = list.get(target).getChild(3).getText().toString();
                 Log.e("UPDATE", "Title : " + StrData.parsingTitle + ", Artist : " + StrData.parsingArtist);
             }
-
-
-
-
 
         }catch(Exception e){
             Log.e("Accessibility", "Skipping Exceptions, keep research");

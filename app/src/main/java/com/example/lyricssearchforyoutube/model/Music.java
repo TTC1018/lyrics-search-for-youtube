@@ -1,4 +1,4 @@
-package com.example.lyricssearchforyoutube.data;
+package com.example.lyricssearchforyoutube.model;
 
 public class Music {
     private String title;

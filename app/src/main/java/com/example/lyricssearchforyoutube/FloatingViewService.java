@@ -23,10 +23,9 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
-import com.example.lyricssearchforyoutube.StrData.StrData;
-import com.example.lyricssearchforyoutube.data.Music;
-import com.example.lyricssearchforyoutube.parsing.BugsLyricsService;
-import com.example.lyricssearchforyoutube.parsing.GoogleLyricsService;
+import com.example.lyricssearchforyoutube.model.Music;
+import com.example.lyricssearchforyoutube.search.BugsLyricsService;
+import com.example.lyricssearchforyoutube.search.GoogleLyricsService;
 
 import java.util.List;
 
@@ -40,25 +39,24 @@ public class FloatingViewService extends Service implements View.OnClickListener
     private int LAYOUT_TYPE;
     private Thread lyricsThr;
 
-
     private BugsLyricsService bugsLyricsService;
     private GoogleLyricsService googleLyricsService;
     List<Music> musicList;
 
     private View collapsedLayout, expandedLayout, appHeadLayout, appBodyLayout, appBottomLayout, scrollView;
-    private ImageView expandedButton, closeButton, homeButton, searchButton;
+    private ImageView expandedButton, closeButton, homeButton;
     private TextView parsingTitleTextView, parsingArtistTextView;
     private Spinner strategySpinner;
     private EditText searchEditText;
 
     private String searchStrategy = "벅스";
- //   private InputMethodManager imm;
+    private InputMethodManager imm;
 
     private static View songBtn[];
+    private static ImageView searchButton;
     private static TextView songTitle[];
     private static TextView songArtist[];
     private static TextView lyricsView;
-
 
     public FloatingViewService() { }
 
@@ -197,17 +195,9 @@ public class FloatingViewService extends Service implements View.OnClickListener
             case R.id.searchButton:
                 // parsing된 데이터 적용
                 setParsingData();
-                searchService();
+                if( parsingTitleTextView.getText().toString().equals("") ) break;
 
-                switch (searchStrategy) {
-                    case "직접입력":
-                    case "벅스":
-                        openSongList();
-                        break;
-                    case "구글":
-                        openLyricsView();
-                        break;
-                }
+                searchService();
                 break;
 
             case R.id.song1:
@@ -230,13 +220,122 @@ public class FloatingViewService extends Service implements View.OnClickListener
                 if( searchStrategy.equals( "직접입력" ) ){
                     searchEditText.clearFocus();
                     searchEditText.requestFocus();
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Service.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(searchEditText, 0);
-
                 }
                 break;
         }
     }
+
+    private void setParsingData(){
+        parsingTitleTextView.setText(StrData.parsingTitle);
+        parsingArtistTextView.setText(StrData.parsingArtist);
+    }
+
+
+    private void searchService(){
+        lyricsThr = new Thread() {
+            @Override
+            public void run() {
+                mHandler.sendEmptyMessage(1999);
+
+                String musicQuery = getSearchQuery();
+                switch (searchStrategy) {
+                    case "직접입력":
+                    case "벅스":
+                        musicList = bugsLyricsService.searchMusic(musicQuery);
+
+                        for( int i = 0 ; i < 5 ; i++ ){
+                            if ( i < musicList.size() ) StrData.music[i] = musicList.get(i);
+                            else StrData.music[i] = new Music();
+                        }
+
+                        mHandler.sendEmptyMessage(1000);
+                        break;
+                    case "구글":
+                        String googleLyrics = googleLyricsService.getGoogleLyrics(musicQuery);
+                        StrData.lyrics = googleLyrics;
+
+                        if(StrData.lyrics.equals("")){
+                            mHandler.sendEmptyMessage(2002);
+                        }else{
+                            mHandler.sendEmptyMessage(2000);
+                        }
+                        break;
+                }
+
+                Log.e("musicQuery", musicQuery);
+            }
+        };
+        lyricsThr.start();
+
+
+
+        // 검색 서비스 후, 화면 전환
+        switch (searchStrategy) {
+            case "직접입력":
+            case "벅스":
+                openSongList();
+                break;
+            case "구글":
+                openLyricsView();
+                break;
+        }
+    }
+
+    private String getSearchQuery(){
+        String musicQuery = parsingTitleTextView.getText().toString(); // parsing data
+        int featuring = musicQuery.indexOf( "(" );
+        if( featuring != -1 ) musicQuery = musicQuery.substring( 0,  featuring);
+
+
+        switch (searchStrategy) {
+            case "직접입력":
+                musicQuery = searchEditText.getText().toString(); // editText data
+            case "벅스":
+                break;
+            case "구글":
+                String mainArtist = parsingArtistTextView.getText().toString().split(",")[0];
+                musicQuery += " " + mainArtist; // 구글은 아티스트와 같이 검색시 검색정확도가 훨신 높음
+                break;
+        }
+
+        return musicQuery;
+    }
+
+    private void openSongList(){
+        for(int i=0; i<5; i++) songBtn[i].setVisibility(View.VISIBLE);
+        scrollView.setVisibility(View.GONE);
+    }
+
+    private void openLyricsView(){
+        for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
+        scrollView.setVisibility(View.VISIBLE);
+    }
+
+    private void openLyricsView( int songNum ){
+        if( StrData.music[songNum].getLyricsLink() == "" ) return;
+
+        new Thread() {
+            @Override
+            public void run() {
+                mHandler.sendEmptyMessage(1999);
+
+                String link = StrData.music[songNum].getLyricsLink();
+                String bugsLyrics = bugsLyricsService.getBugsLyrics(link);
+                StrData.lyrics = bugsLyrics;
+
+                if(StrData.lyrics.equals("")){
+                    mHandler.sendEmptyMessage(2001);
+                }else{
+                    mHandler.sendEmptyMessage(2000);
+                }
+
+            }
+        }.start();
+
+        openLyricsView();
+    }
+
 
     private View.OnTouchListener makeTouchListener(){
         View.OnTouchListener otl = new View.OnTouchListener(){
@@ -282,120 +381,38 @@ public class FloatingViewService extends Service implements View.OnClickListener
         return LAYOUT_TYPE;
     }
 
-    private void setParsingData(){
-        parsingTitleTextView.setText(StrData.parsingTitle);
-        parsingArtistTextView.setText(StrData.parsingArtist);
-    }
-
-
-    private void searchService(){
-        lyricsThr = new Thread() {
-            @Override
-            public void run() {
-                mHandler.sendEmptyMessage(1999);
-
-                String musicQuery = getSearchQuery();
-
-                Log.e("musicQuery", musicQuery);
-
-                switch (searchStrategy) {
-                    case "직접입력":
-                        musicQuery = searchEditText.getText().toString(); // editText data
-                    case "벅스":
-                        musicList = bugsLyricsService.searchMusic(musicQuery);
-
-                        for( int i = 0 ; i < 5 ; i++ ){
-                            if ( i < musicList.size() ) StrData.music[i] = musicList.get(i);
-                            else StrData.music[i] = new Music();
-                        }
-
-                        mHandler.sendEmptyMessage(1000);
-                        break;
-                    case "구글":
-                        String lyrics = googleLyricsService.getGoogleLyrics(musicQuery);
-                        StrData.lyrics = lyrics;
-
-                        if(StrData.lyrics.equals("")){
-                            mHandler.sendEmptyMessage(2001);
-                        }else{
-                            mHandler.sendEmptyMessage(2000);
-                        }
-                        break;
-                }
-            }
-        };
-        lyricsThr.start();
-    }
-
-    private String getSearchQuery(){
-        String musicQuery = StrData.parsingTitle; // parsing data
-        int featuring = musicQuery.indexOf( "(" );
-        if( featuring != -1 ) musicQuery = musicQuery.substring( 0,  featuring);
-
-        return musicQuery;
-    }
-
-    private void openSongList(){
-        appBodyLayout.setVisibility(View.VISIBLE);
-        for(int i=0; i<5; i++) songBtn[i].setVisibility(View.VISIBLE);
-        scrollView.setVisibility(View.GONE);
-    }
-
-
-    private void openLyricsView(){
-        lyricsView.setText( StrData.lyrics );
-
-        for(int i=0; i<5; i++) songBtn[i].setVisibility(View.GONE);
-        scrollView.setVisibility(View.VISIBLE);
-    }
-
-    private void openLyricsView( int songNum ){
-        if( StrData.music[songNum].getLyricsLink() == "" ) return;
-
-        new Thread() {
-            @Override
-            public void run() {
-                mHandler.sendEmptyMessage(1999);
-
-                String link = StrData.music[songNum].getLyricsLink();
-                String lyrics = bugsLyricsService.getBugsLyrics(link);
-                StrData.lyrics = lyrics;
-
-
-                if(StrData.lyrics.equals("")){
-                    mHandler.sendEmptyMessage(2001);
-                }else{
-                    mHandler.sendEmptyMessage(2000);
-                }
-
-            }
-        }.start();
-
-        openLyricsView();
-    }
-
-
-
-
-
+    /**
+     * Thread Handler Class
+     *
+     * Thread 응답처리
+     *
+     */
     public static class MyHandler extends Handler{
         @Override
         public void handleMessage(Message msg){
             switch(msg.what){
                 case 1000:
+                    searchButton.setClickable(true);
                     for( int i = 0 ; i < 5 ; i++ ) {
                         songTitle[i].setText( StrData.music[i].getTitle() );
                         songArtist[i].setText( StrData.music[i].getArtist() );
                     }
                     break;
                 case 1999:
+                    searchButton.setClickable(false);
                     lyricsView.setText("불러오는 중...");
                     break;
-                case 2000:
+                case 2000: // success
+                    searchButton.setClickable(true);
                     lyricsView.setText(StrData.lyrics);
                     break;
-                case 2001:
+                case 2001: // bugs fail
+                    searchButton.setClickable(true);
                     lyricsView.setText("성인인증이 필요한 곡은 불러올 수 없습니다.");
+                    break;
+                case 2002: // youtube fail
+                    searchButton.setClickable(true);
+                    lyricsView.setText("검색되는 곡이 없습니다.");
                     break;
             }
         }
