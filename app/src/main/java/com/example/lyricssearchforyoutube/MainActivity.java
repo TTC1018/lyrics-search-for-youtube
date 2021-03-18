@@ -17,19 +17,17 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
+import android.view.Window;
 import android.view.accessibility.AccessibilityManager;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.example.lyricssearchforyoutube.StrData.StrData;
+import com.example.lyricssearchforyoutube.guide.DescriptionActivity;
+import com.example.lyricssearchforyoutube.parsing.MyAccessibilityService;
 import com.example.lyricssearchforyoutube.widget.WidgetManager;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,11 +38,42 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton startBtn;
     private AlertDialog dialog;
 
+    private LinearLayout guideLayout;
+    private Button guideYesBtn, guideNoBtn;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
-        checkAccessibilityPermission();
+
+        // Splash
+        Intent intent = new Intent(this, SplashActivity.class);
+        startActivity(intent);
+
+
+        guideLayout = findViewById(R.id.guideLayout);
+        guideYesBtn = findViewById(R.id.guideYesBtn);
+        guideNoBtn  = findViewById(R.id.guideNoBtn);
+        guideYesBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Guidline
+                Intent intent1 =  new Intent(MainActivity.this, DescriptionActivity.class);
+                startActivity(intent1);
+            }
+        });
+        guideNoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                guideLayout.setVisibility(View.GONE);
+                startBtn.setVisibility(View.VISIBLE);
+
+                checkAccessibilityPermission();
+            }
+        });
+
 
         widget = WidgetManager.getWidget();
         widget.stopService(MainActivity.this);
@@ -80,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
     }
 
     private boolean checkOverlayDisplayPermission() {
