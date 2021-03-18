@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="preloaded_fonts" translatable="false">
+        <item>@font/adamina</item>
+        <item>@font/alex_brush</item>
+        <item>@font/amita</item>
+        <item>@font/cairo_bold</item>
+        <item>@font/fascinate</item>
+        <item>@font/satisfy</item>
+        <item>@font/sniglet</item>
+    </array>
+</resources>
