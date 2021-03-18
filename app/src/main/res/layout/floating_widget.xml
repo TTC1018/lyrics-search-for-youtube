@@ -109,7 +109,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="12dp"
-                android:visibility="invisible"
                 >
 
 
@@ -121,6 +120,7 @@
                     android:layout_marginRight="10dp"
                     android:background="@drawable/border_topbottom"
                     android:orientation="vertical"
+                    android:visibility="gone"
                     >
 
                     <TextView
@@ -157,6 +157,7 @@
                     android:layout_marginRight="10dp"
                     android:background="@drawable/border_topbottom"
                     android:orientation="vertical"
+                    android:visibility="gone"
                     >
 
                     <TextView
@@ -191,6 +192,7 @@
                     android:layout_marginRight="10dp"
                     android:background="@drawable/border_topbottom"
                     android:orientation="vertical"
+                    android:visibility="gone"
                     >
 
                     <TextView
@@ -225,6 +227,7 @@
                     android:layout_marginRight="10dp"
                     android:background="@drawable/border_topbottom"
                     android:orientation="vertical"
+                    android:visibility="gone"
                     >
 
                     <TextView
@@ -259,6 +262,7 @@
                     android:layout_marginRight="10dp"
                     android:background="@drawable/border_topbottom"
                     android:orientation="vertical"
+                    android:visibility="gone"
                     >
 
                     <TextView
@@ -290,8 +294,7 @@
                 <ScrollView
                     android:id="@+id/scrollView"
                     android:layout_width="match_parent"
-                    android:layout_height="180dp"
-                    android:visibility="gone">
+                    android:layout_height="180dp">
 
                     <TextView
                         android:id="@+id/lyricsView"
@@ -301,7 +304,8 @@
                         android:layout_marginRight="10dp"
                         android:gravity="center"
                         android:textAlignment="center"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        />
                 </ScrollView>
             </LinearLayout>
 
