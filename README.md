@@ -4,11 +4,11 @@
 
 ## 프로젝트 소개
 
-| 구분      | 내용                                            |
+|구분| Description                                            |
 | --------- | ----------------------------------------------- |
-| 한줄 소개 | 유튜브 뮤직 어플에 가사를 띄워주는 어플리케이션 |
+| 한줄 소개 | Youtube Music Application에 가사를 띄워주는 어플리케이션 |
 | 진행 기간 | 2021.02.11 ~                           |
-| 사용 스택 | Android, Crawler                                |
+| Tech Stack |<img src="https://img.shields.io/badge/WindowManager-3DDC84?style=forthebadge&logo=Android&logoColor=white"/> <img src="https://img.shields.io/badge/Service-3DDC84?style=forthebadge&logo=Android&logoColor=white"/> <img src="https://img.shields.io/badge/AccessibilityService-3DDC84?style=forthebadge&logo=Android&logoColor=white"/> <img src="https://img.shields.io/badge/JSoup-FF6550?style=forthebadge"/>|
 
 
 
