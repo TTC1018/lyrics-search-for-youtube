@@ -63,5 +63,5 @@
 |:---:|:---:|
 |<img src="https://user-images.githubusercontent.com/39405316/205972374-67270d7a-abb4-4f31-8107-4902f70f03d1.gif" width="250"/>|<img src="https://user-images.githubusercontent.com/39405316/205971302-23e51070-8ad4-417e-a208-05db4ad43e79.gif" width="250"/>|
 
-- 앱을 플로팅 위젯 형태로 변환합니다.
-- 플로팅 위젯은 자유롭게 드래그 및 팝업이 가능합니다.
+- 화면 내 곡 제목을 활용하여 가사를 검색합니다.
+- 다른 곡을 재생해도 기능은 동일하게 작동합니다.
